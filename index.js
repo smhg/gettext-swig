@@ -6,7 +6,7 @@ var newline = /\r?\n|\r/g,
   trimQuotes = function (str) {
       return str.replace(/^['"]/g, '').replace(/['"]$/g, '');
     },
-  paramPattern = new RegExp('([\'"][^\'"]*[\'"]|[^\'" ]+)', 'g');
+  paramPattern = new RegExp('([\'"][^\'"]*[\'"]|[^\'", ]+)', 'g');
 
 /**
  * Constructor
@@ -25,11 +25,12 @@ function Parser (keywordSpec) {
 
   this.keywordSpec = keywordSpec;
   this.expressionPattern = new RegExp([
-    '{%-? +',
+    '{{ +',
     '(' + Object.keys(keywordSpec).map(escapeRegExp).join('|') + ')',
-    ' +',
+    '\\(',
     '([\\s\\S]*?)',
-    ' +-?%}'
+    '\\)',
+    ' +}}'
     ].join(''), 'g');
 }
 
