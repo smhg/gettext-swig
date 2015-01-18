@@ -48,12 +48,12 @@ function Parser (keywordSpec) {
 
   this.keywordSpec = keywordSpec;
   this.expressionPattern = new RegExp([
-    '{{ +',
+    '{{ *',
     '(' + Object.keys(keywordSpec).map(escapeRegExp).join('|') + ')',
     '\\(',
     '([\\s\\S]*?)',
     '\\)',
-    ' +}}'
+    ' *}}'
   ].join(''), 'g');
 }
 
