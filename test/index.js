@@ -21,7 +21,8 @@ describe('Parser', function () {
                 assert.equal(typeof result, 'object');
                 assert('inside block' in result);
                 assert('inside block inverse' in result);
-                assert.equal(Object.keys(result).length, 9);
+                assert('word \\"escaped, word\\", with comma' in result);
+                assert.equal(Object.keys(result).length, 13);
                 assert.equal(result['Image description'].line.length, 2);
 
                 done();
