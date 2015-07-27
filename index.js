@@ -32,8 +32,9 @@ var newline = /\r?\n|\r/g,
   };
 
 /**
- * Constructor
- * @param Object keywordSpec An object with keywords as keys and parameter indexes as values
+ * @class Parser
+ * @constructor
+ * @param {Object} keywordSpec An object with keywords as keys and parameter indexes as values
  */
 function Parser (keywordSpec) {
   keywordSpec = keywordSpec || {
@@ -48,41 +49,39 @@ function Parser (keywordSpec) {
 
   this.keywordSpec = keywordSpec;
   this.expressionPattern = new RegExp([
-    '{{ *',
-    '(' + Object.keys(keywordSpec).map(escapeRegExp).join('|') + ')',
-    '\\(',
-    '([\\s\\S]*?)',
-    '\\)',
-    ' *}}'
+    '(?:(?:(?!' + Object.keys(keywordSpec).map(escapeRegExp).join('|') + ').)*?' +
+    '(?:(?:\\s|\\.)(' + Object.keys(keywordSpec).map(escapeRegExp).join('|') + ')\\(([^)]*)\\)))'
   ].join(''), 'g');
+  this.swigExpressionPattern = /{{((?:(?!}}).)*)}}/g;
 }
 
 /**
  * Given a Swig template string returns the list of i18n strings.
  *
- * @param String template The content of a HBS template.
- * @return Object The list of translatable strings, the line(s) on which each appears and an optional plural form.
+ * @param {String} template The content of a HBS template.
+ * @return {Object} The list of translatable strings, the line(s) on which each appears and an optional plural form.
  */
 Parser.prototype.parse = function (template) {
   var result = {},
-    match,
-    keyword,
-    params,
-    msgid;
+      match,
+      keyword,
+      params,
+      expMatch,
+      msgid;
 
-  while ((match = this.expressionPattern.exec(template)) !== null) {
-    keyword = match[1];
+  while ((expMatch = this.swigExpressionPattern.exec(template)) !== null) {
+    while ((match = this.expressionPattern.exec(expMatch[1])) !== null) {
+      keyword = match[1];
+      params = match[2].split(',').reduce(groupParams, []).map(trim).map(trimQuotes);
+      msgid = params[this.keywordSpec[keyword][0]];
+      result[msgid] = result[msgid] || {line: []};
+      result[msgid].line.push(template.substr(0, match.index).split(newline).length);
 
-    params = match[2].split(',').reduce(groupParams, []).map(trim).map(trimQuotes);
-
-    msgid = params[this.keywordSpec[keyword][0]];
-
-    result[msgid] = result[msgid] || {line: []};
-    result[msgid].line.push(template.substr(0, match.index).split(newline).length);
-
-    if (this.keywordSpec[keyword].length > 1) {
-      result[msgid].plural = result[msgid].plural || params[this.keywordSpec[keyword][1]];
+      if (this.keywordSpec[keyword].length > 1) {
+        result[msgid].plural = result[msgid].plural || params[this.keywordSpec[keyword][1]];
+      }
     }
+
   }
 
   return result;
