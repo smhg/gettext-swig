@@ -53,6 +53,7 @@ function Parser(keywordSpec) {
     '\\(((?:(["\'])(.|\\t|\\n|\\r)*?\\4(?:,\\s?)*(?:[\\w\\.[],\\s+-/()]+)*)*)\\))'
   ].join(''), 'g');
   this.swigExpressionPattern = /{{((?:(?!{{)(?:.|\t|\n|\r))*)}}|{%((?:(?!{%)(?:.|\t|\n|\r))*)%}/g;
+  this.keyWordExist =  new RegExp(Object.keys(keywordSpec).map(escapeRegExp).join('|'), 'g')
 }
 
 /**
