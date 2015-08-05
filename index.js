@@ -50,9 +50,9 @@ function Parser(keywordSpec) {
   this.keywordSpec = keywordSpec;
   this.expressionPattern = new RegExp([
     '(?:(.)?(' + Object.keys(keywordSpec).map(escapeRegExp).join('|') + ')',
-    '\\(((?:(["\'])(.|\\t|\\n|\\r)*?\\4(?:,\\s?)*(?:[\\w\\.]+)*)*)\\))'
+    '\\(((?:(["\'])(.|\\t|\\n|\\r)*?\\4(?:,\\s?)*(?:[\\w\\.[],\\s+-/()]+)*)*)\\))'
   ].join(''), 'g');
-  this.swigExpressionPattern = /({{|{%)((?:(?!\1)(?:.|\t|\n|\r))*)(}}|%})/g;
+  this.swigExpressionPattern = /{{((?:(?!{{)(?:.|\t|\n|\r))*)}}|{%((?:(?!{%)(?:.|\t|\n|\r))*)%}/g;
 }
 
 /**
@@ -70,6 +70,10 @@ Parser.prototype.parse = function (template) {
       msgid;
 
   while ((expMatch = this.swigExpressionPattern.exec(template)) !== null) {
+    var expResult = expMatch[1] || expMatch[2];
+    if(!this.keyWordExist.test(expResult)){
+      continue;
+    }
     while ((match = this.expressionPattern.exec(expMatch[1])) !== null) {
       if (match[1] !== ' ' && match[1] !== '.' && match[1] !== undefined) {
         continue;
