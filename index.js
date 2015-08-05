@@ -50,9 +50,9 @@ function Parser(keywordSpec) {
   this.keywordSpec = keywordSpec;
   this.expressionPattern = new RegExp([
     '(?:(.)?(' + Object.keys(keywordSpec).map(escapeRegExp).join('|') + ')',
-    '\\(((?:(["\'])(.|\\t|\\n|\\r)*?\\4(?:,\\s?)*(?:[\\w]+)*)*)\\))'
+    '\\(((?:(["\'])(.|\\t|\\n|\\r)*?\\4(?:,\\s?)*(?:[\\w\\.]+)*)*)\\))'
   ].join(''), 'g');
-  this.swigExpressionPattern = /{{((?:(?!}})(?:.|\t|\n|\r))*)}}/g;
+  this.swigExpressionPattern = /({{|{%)((?:(?!\1)(?:.|\t|\n|\r))*)(}}|%})/g;
 }
 
 /**
