@@ -38,10 +38,10 @@ var newline = /\r?\n|\r/g,
  */
 function Parser(keywordSpec) {
   keywordSpec = keywordSpec || {
-        _: [0],
-        gettext: [0],
-        ngettext: [0, 1]
-      };
+      _: [0],
+      gettext: [0],
+      ngettext: [0, 1]
+    };
 
   if (typeof keywordSpec !== 'object') {
     throw 'Invalid keyword spec';
@@ -50,10 +50,10 @@ function Parser(keywordSpec) {
   this.keywordSpec = keywordSpec;
   this.expressionPattern = new RegExp([
     '(?:(.)?(' + Object.keys(keywordSpec).map(escapeRegExp).join('|') + ')',
-    '\\(((?:(["\'])(.|\\t|\\n|\\r)*?\\4(?:,\\s?)*(?:[\\w\\.[],\\s+-/()]+)*)*)\\))'
+    '\\(((?:(["\'])(.|\\t|\\n|\\r)*?\\4(?:,\\s?)*(?:[\\w\\.[\\],\\s+-/()]+)*)*)\\))'
   ].join(''), 'g');
   this.swigExpressionPattern = /{{((?:(?!{{)(?:.|\t|\n|\r))*)}}|{%((?:(?!{%)(?:.|\t|\n|\r))*)%}/g;
-  this.keyWordExist =  new RegExp(Object.keys(keywordSpec).map(escapeRegExp).join('|'), 'g')
+  this.keyWordExist = new RegExp(Object.keys(keywordSpec).map(escapeRegExp).join('|'))
 }
 
 /**
@@ -64,15 +64,15 @@ function Parser(keywordSpec) {
  */
 Parser.prototype.parse = function (template) {
   var result = {},
-      match,
-      keyword,
-      params,
-      expMatch,
-      msgid;
+    match,
+    keyword,
+    params,
+    expMatch,
+    msgid;
 
   while ((expMatch = this.swigExpressionPattern.exec(template)) !== null) {
     var expResult = expMatch[1] || expMatch[2];
-    if(!this.keyWordExist.test(expResult)){
+    if (!this.keyWordExist.test(expResult)) {
       continue;
     }
     while ((match = this.expressionPattern.exec(expResult)) !== null) {

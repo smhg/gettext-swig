@@ -24,7 +24,7 @@ describe('Parser', function () {
                 assert('word \\"escaped, word\\", with comma' in result);
                 assert('with filter' in result);
                 assert('with ) text' in result);
-                assert.equal(Object.keys(result).length, 15);
+                assert.equal(Object.keys(result).length, 16);
                 assert.equal(result['Image description'].line.length, 2);
 
                 done();
