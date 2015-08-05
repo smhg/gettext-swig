@@ -75,7 +75,7 @@ Parser.prototype.parse = function (template) {
     if(!this.keyWordExist.test(expResult)){
       continue;
     }
-    while ((match = this.expressionPattern.exec(expMatch[1])) !== null) {
+    while ((match = this.expressionPattern.exec(expResult)) !== null) {
       if (match[1] !== ' ' && match[1] !== '.' && match[1] !== undefined) {
         continue;
       }
