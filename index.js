@@ -69,9 +69,6 @@ Parser.prototype.parse = function (template) {
     params,
     expMatch,
     msgid;
-  if (template.indexOf('billing_balance_offert') != -1) {
-    console.log(template);
-  }
   while ((expMatch = this.swigExpressionPattern.exec(template)) !== null) {
     var expResult = expMatch[1] || expMatch[2];
 
