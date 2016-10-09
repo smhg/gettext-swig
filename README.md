@@ -1,6 +1,6 @@
 # gettext-swig [![build status](https://secure.travis-ci.org/smhg/gettext-swig.png)](http://travis-ci.org/smhg/gettext-swig)
 
-Extract translatable strings from [Swig](http://paularmstrong.github.io/swig/) template strings.
+Extract translatable strings from [Swig](https://github.com/paularmstrong/swig) template strings.
 
 It can be used stand-alone or through [gmarty/gettext](https://github.com/gmarty/xgettext).
 
