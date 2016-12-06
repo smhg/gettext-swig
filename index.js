@@ -1,3 +1,7 @@
+'use strict';
+
+var uniq = require("uniq");
+
 var newline = /\r?\n|\r/g,
   escapeRegExp = function (str) {
     // source: https://developer.mozilla.org/en/docs/Web/JavaScript/Guide/Regular_Expressions
@@ -60,11 +64,11 @@ function Parser (keywordSpec) {
 /**
  * Given a Swig template string returns the list of i18n strings.
  *
- * @param String template The content of a HBS template.
+ * @param String template The content of a Swig template.
  * @return Object The list of translatable strings, the line(s) on which each appears and an optional plural form.
  */
 Parser.prototype.parse = function (template) {
-  var result = {},
+  var results = [],
     match,
     keyword,
     params,
@@ -72,20 +76,48 @@ Parser.prototype.parse = function (template) {
 
   while ((match = this.expressionPattern.exec(template)) !== null) {
     keyword = match[1];
-
     params = match[2].split(',').reduce(groupParams, []).map(trim).map(trimQuotes);
 
-    msgid = params[this.keywordSpec[keyword][0]];
+    // Parse message.
+    var msgidIndex = this.keywordSpec[keyword].msgid;
+    msgid = params[msgidIndex];
 
-    result[msgid] = result[msgid] || {line: []};
-    result[msgid].line.push(template.substr(0, match.index).split(newline).length);
+    // Prepare the result object.
+    var result = {
+      msgid: msgid,
+      line: []
+    };
+    
+    // Parse message lines.
+    result.line.push(template.substr(0, match.index).split(newline).length);
 
-    if (this.keywordSpec[keyword].length > 1) {
-      result[msgid].plural = result[msgid].plural || params[this.keywordSpec[keyword][1]];
+    // Parse plural form.
+    if(this.keywordSpec[keyword].msgid_plural !== undefined) {
+      var pluralIndex = this.keywordSpec[keyword].msgid_plural;
+      result.plural = result.plural || params[pluralIndex];
     }
+
+    // Parse context.
+    if(this.keywordSpec[keyword].msgctxt !== undefined) {
+      var contextIndex = this.keywordSpec[keyword].msgctxt;
+      result.msgctxt = result.msgctxt || params[contextIndex];
+    }
+
+    // Add result to results.
+    results.push(result);
   }
 
-  return result;
+  // Find duplicates and join them to one item.
+  uniq(results, function(a, b) {
+    // Items are the same if the message and the context are identical.
+    if(a.msgid === b.msgid && a.msgctxt === b.msgctxt) {
+        a.line.push(b.line[0]);
+        return 0;
+    }
+    return 1;
+  });
+
+  return results;
 };
 
 module.exports = Parser;
