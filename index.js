@@ -60,11 +60,11 @@ function Parser (keywordSpec) {
 /**
  * Given a Swig template string returns the list of i18n strings.
  *
- * @param String template The content of a HBS template.
+ * @param String template The content of a Swig template.
  * @return Object The list of translatable strings, the line(s) on which each appears and an optional plural form.
  */
 Parser.prototype.parse = function (template) {
-  var result = {},
+  var results = [],
     match,
     keyword,
     params,
@@ -72,20 +72,64 @@ Parser.prototype.parse = function (template) {
 
   while ((match = this.expressionPattern.exec(template)) !== null) {
     keyword = match[1];
-
     params = match[2].split(',').reduce(groupParams, []).map(trim).map(trimQuotes);
 
-    msgid = params[this.keywordSpec[keyword][0]];
+    // Parse message.
+    const msgidIndex = this.keywordSpec[keyword].msgid;
+    msgid = params[msgidIndex];
 
-    result[msgid] = result[msgid] || {line: []};
-    result[msgid].line.push(template.substr(0, match.index).split(newline).length);
+    // Prepare the result object.
+    var result = {
+      msgid: msgid,
+      line: []
+    }
+    
+    // Parse message lines.
+    result.line.push(template.substr(0, match.index).split(newline).length);
 
-    if (this.keywordSpec[keyword].length > 1) {
-      result[msgid].plural = result[msgid].plural || params[this.keywordSpec[keyword][1]];
+    // Parse plural form.
+    if(this.keywordSpec[keyword].msgid_plural != undefined) {
+      const pluralIndex = this.keywordSpec[keyword].msgid_plural;
+      result.plural = result.plural || params[pluralIndex];
+    }
+
+    // Parse context.
+    if(this.keywordSpec[keyword].msgctxt != undefined) {
+      const contextIndex = this.keywordSpec[keyword].msgctxt;
+      result.msgctxt = result.msgctxt || params[contextIndex];
+    }
+
+    // Add result to results.
+    results.push(result);
+  }
+
+  // Find duplicates and join them to one item.
+  var itemsMarkedForRemoval = [];
+  for(var i in results) {
+    var itemLeft = results[i];
+
+    for(var j in results) {
+      if(i===j) continue;
+      var itemRight = results[j];
+
+      // Items are the same if the message and the context are identical.
+      if(itemLeft.msgid === itemRight.msgid && itemLeft.msgctxt === itemRight.msgctxt) {
+        itemLeft.line.push(itemRight.line[0]);
+        itemsMarkedForRemoval = j;
+      }
     }
   }
 
-  return result;
+  // Remove duplicates.
+  var resultsOutput = [];
+  for(var i in results) {
+    if(itemsMarkedForRemoval.indexOf(i) === -1) {
+      results[i].line = results[i].line.sort();
+      resultsOutput.push(results[i]);
+    }
+  }
+
+  return resultsOutput;
 };
 
 module.exports = Parser;
