@@ -142,16 +142,6 @@ Parser.prototype.parse = function (template) {
     params,
     msgid;
 
-  function findResult (result) {
-    for(var i in results) {
-      if(results[i].msgid === result.msgid && results[i].msgctxt === result.msgctxt) {
-        return results[i];
-      }
-    }
-
-    return undefined;
-  }
-
   while ((match = this.expressionPattern.exec(template)) !== null) {
     keyword = match[1];
     params = match[2].split(',').reduce(groupParams, []).map(trim).map(trimQuotes);
@@ -183,8 +173,8 @@ Parser.prototype.parse = function (template) {
 
       var existingPlural = results[result.msgid];
       if(existingPlural && existingPlural.plural && (existingPlural.plural !== pluralValue)) {
-        throw new Error('Incompatible plural definitions for msgid "' + msgid +
-          '" ("' + result.msgid_plural + '" and "' + plural + '")');
+        throw new Error('Incompatible plural definitions for msgid "' + result.msgid +
+          '" ("' + existingPlural.plural + '" and "' + pluralValue + '")');
       }
 
       result.plural = result.msgid_plural = result.plural || pluralValue;
