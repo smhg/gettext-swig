@@ -1,67 +1,154 @@
+'use strict';
+
 var Parser = require('..'),
   fs = require('fs'),
   assert = require('assert');
 
-function inObject(object, property, value, returnObject) {
-    var objectArray = Object.keys(object).map(function (key) { return object[key]; });
-    
-    for(var i in objectArray) {
-        if(objectArray[i][property] === value) {
-            if(returnObject) {
-                return objectArray[i];
-            }
-
-            return true;
-        }
-    }
-
-    return false;
-}
-
 describe('Parser', function () {
-    describe('#()', function () {
-        it('should have default keyword spec when none is passed', function () {
-            assert((new Parser()).keywordSpec.gettext.length > 0);
-          });
-      });
+  describe('#()', function () {
+    it('should have default keyword spec when none is passed', function () {
+      assert(Object.keys((new Parser()).keywordSpec.gettext).length > 0);
+    });
 
-    describe('#parse()', function () {
-        it('should return results', function (done) {
-            fs.readFile(__dirname + '/fixtures/template.html', {encoding: 'utf8'}, function (err, data) {
-                if (err) {
-                  throw err;
-                }
+    it('should convert old spec formats', function () {
+      assert.deepEqual((new Parser({_: [0]})).keywordSpec, {_: {msgid: 0}});
+      assert.deepEqual((new Parser({n_: [0, 1]})).keywordSpec, {n_: {msgid: 0, msgid_plural: 1}});
 
-                var result = (new Parser()).parse(data);
+      var spec = new Parser({n_: [2, 1]}).keywordSpec.n_;
+      assert.equal(Object.keys(spec).length, 2);
+      assert.equal(spec.msgid_plural, 1);
+      assert.equal(spec.msgid, 2);
 
-                assert.equal(typeof result, 'object');
-                assert(inObject(result, 'msgid', 'inside block'));
-                assert(inObject(result, 'msgid', 'inside block inverse'));
-                assert(inObject(result, 'msgid', 'word \\"escaped, word\\", with comma'));
-                assert(inObject(result, 'msgid', 'Testing contexts') && inObject(result, 'msgctxt', 'context1'));
-                assert(inObject(result, 'msgid', 'Testing contexts') && inObject(result, 'msgctxt', 'context2'));
-                assert.equal(Object.keys(result).length, 15);
-                var imageDescriptionMessage = inObject(result, 'msgid', 'Image description', 'returnObject');
-                assert.equal(imageDescriptionMessage.line.length, 2);
+      spec = new Parser({n_: [1, 2]}).keywordSpec.n_;
+      assert.equal(Object.keys(spec).length, 2);
+      assert.equal(spec.msgid, 1);
+      assert.equal(spec.msgid_plural, 2);
 
-                done();
-              });
-          });
-
-        it('should return plural results', function (done) {
-            fs.readFile(__dirname + '/fixtures/plural.html', {encoding: 'utf8'}, function (err, data) {
-                if (err) {
-                  throw err;
-                }
-
-                var result = (new Parser()).parse(data);
-
-                assert.equal(Object.keys(result).length, 4);
-                assert.equal(inObject(result, 'msgid', 'default', 'returnObject').plural, 'defaults');
-                assert(inObject(result, 'plural', 'quotes') && inObject(result, 'msgctxt', 'context3'));
-
-                done();
-              });
-          });
-      });
+      spec = new Parser({ngettext: ['msgid', 'msgid_plural']}).keywordSpec.ngettext;
+      assert.equal(Object.keys(spec).length, 2);
+      assert.equal(spec.msgid, 0);
+      assert.equal(spec.msgid_plural, 1);
+    });
   });
+
+  describe('#parse()', function () {
+    it('should return results', function (done) {
+      fs.readFile(__dirname + '/fixtures/template.html', {encoding: 'utf8'}, function (err, data) {
+        if (err) {
+          throw err;
+        }
+
+        var result = (new Parser()).parse(data);
+
+        assert.equal(typeof result, 'object');
+        assert('inside block' in result);
+        assert('inside block inverse' in result);
+        assert.equal(Object.keys(result).length, 8);
+        assert.equal(result['Image description'].line.length, 2);
+
+        done();
+      });
+    });
+
+    it('should return plural results', function (done) {
+      fs.readFile(__dirname + '/fixtures/plural.html', {encoding: 'utf8'}, function (err, data) {
+        if (err) {
+          throw err;
+        }
+
+        var result = (new Parser()).parse(data);
+
+        assert.equal(Object.keys(result).length, 2);
+        assert.equal(result['default'].plural, 'defaults');
+
+        done();
+      });
+    });
+
+    it('should throw an error if there are mismatched plurals', function (done) {
+      fs.readFile(__dirname + '/fixtures/mismatched-plurals.html', {encoding: 'utf8'}, function (err, data) {
+        if (err) {
+          throw err;
+        }
+
+        assert.throws(function() { new Parser().parse(data); }, Error);
+
+        done();
+      });
+    });
+  });
+
+  it('should support skipping parameters', function (done) {
+    fs.readFile(__dirname + '/fixtures/skip-params.html', {encoding: 'utf8'}, function (err, data) {
+      if (err) {
+        throw err;
+      }
+
+      var result = new Parser({_: [1, 2]}).parse(data);
+
+      assert.equal(result.msgid.msgid, 'msgid');
+      assert.equal(result.msgid.msgid_plural, 'plural');
+
+      done();
+    });
+  });
+
+  it('should support extracting contexts', function (done) {
+    fs.readFile(__dirname + '/fixtures/contexts.html', {encoding: 'utf8'}, function (err, data) {
+      if (err) {
+        throw err;
+      }
+
+      var result = (new Parser({
+        pgettext: {
+          msgctxt: 0,
+          msgid: 1
+        },
+        npgettext: {
+          msgctxt: 0,
+          msgid: 1,
+          msgid_plural: 2
+        }
+      })).parse(data);
+
+      var key = Parser.messageToKey('msgid', 'first context');
+      assert(key in result);
+      assert.equal(result[key].msgctxt, 'first context');
+
+      key = Parser.messageToKey('msgid', 'second context');
+      assert(key in result);
+      assert.equal(result[key].msgctxt, 'second context');
+
+      key = Parser.messageToKey('file', 'first context');
+      assert(key in result);
+      assert.equal(result[key].msgctxt, 'first context');
+      assert.equal(result[key].msgid_plural, 'files');
+      assert.equal(result[key].plural, 'files');
+
+      key = Parser.messageToKey('file', 'second context');
+      assert(key in result);
+      assert.equal(result[key].msgctxt, 'second context');
+      assert.equal(result[key].msgid_plural, 'files');
+      assert.equal(result[key].plural, 'files');
+
+      assert.equal(4, Object.keys(result).length);
+
+      done();
+    });
+  });
+
+  it('should support being called without `new`', function (done) {
+    /* jshint newcap: false */
+    fs.readFile(__dirname + '/fixtures/template.html', {encoding: 'utf8'}, function (err, data) {
+      if (err) {
+        throw err;
+      }
+
+      var result = Parser().parse(data);
+
+      assert('inside block' in result);
+
+      done();
+    });
+  });
+});
