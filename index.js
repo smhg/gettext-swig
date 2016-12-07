@@ -1,6 +1,6 @@
 'use strict';
 
-var uniq = require("uniq");
+var Keywordspec = require('./keywordspec');
 
 var newline = /\r?\n|\r/g,
   escapeRegExp = function (str) {
@@ -40,11 +40,17 @@ var newline = /\r?\n|\r/g,
  * @param Object keywordSpec An object with keywords as keys and parameter indexes as values
  */
 function Parser (keywordSpec) {
-  keywordSpec = keywordSpec || {
-    _: [0],
-    gettext: [0],
-    ngettext: [0, 1]
-  };
+  // All keywords available from the 'node-gettext' lib and tested with this parser.
+  keywordSpec = keywordSpec || Keywordspec(
+    ["gettext", "_",
+     //"dgettext:2", "_d:2",
+     "ngettext:1,2", "_n:1,2",
+     //"dngettext:2,3", "_dn:2,3",
+		 "pgettext:1c,2", "_p:1c,2",
+     //"dpgettext:2c,3", "_dp:2c,3",
+     "npgettext:1c,2,3", "_np:1c,2,3",
+     //"dnpgettext:2c,3,4", "_dnp:2c,3,4"
+    ]);
 
   if (typeof keywordSpec !== 'object') {
     throw 'Invalid keyword spec';
@@ -104,18 +110,16 @@ Parser.prototype.parse = function (template) {
     }
 
     // Add result to results.
-    results.push(result);
-  }
+    var foundResult = results.find(function(results) {
+      return results.msgid === result.msgid && results.msgctxt === result.msgctxt;
+    });
 
-  // Find duplicates and join them to one item.
-  uniq(results, function(a, b) {
-    // Items are the same if the message and the context are identical.
-    if(a.msgid === b.msgid && a.msgctxt === b.msgctxt) {
-        a.line.push(b.line[0]);
-        return 0;
-    }
-    return 1;
-  });
+    if(foundResult) {
+      foundResult.line.push(result.line[0]);
+    } else {
+      results.push(result);
+    }    
+  }
 
   return results;
 };
