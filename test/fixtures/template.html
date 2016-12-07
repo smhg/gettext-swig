@@ -6,6 +6,7 @@
 <p>{{ _("word \"escaped, word\", with comma") }}</p>
 <p>{{ _("ending, with an escaped quote\"") }}</p>
 <p>{{ nl2br(description) }}</p>
+<p>{{ _p('context1', 'Testing contexts') }}</p>
 <img src="someimage.png" alt="{{ _("Image description") }}" />
 <p>{{ _("Multiline
 text") }}
@@ -17,6 +18,7 @@ text") }}
 <p>{{ _("inside block") }}</p>
 {% else %}
 <span class="warning">{{ _("inside block inverse") }}</span>
+<p>{{ _p('context2', 'Testing contexts') }}</p>
 {% endif %}
 {%- if check %}
 {{ _("whitespace escaped") }}
