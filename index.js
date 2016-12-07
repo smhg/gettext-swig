@@ -41,7 +41,7 @@ var newline = /\r?\n|\r/g,
  */
 function Parser (keywordSpec) {
   // All keywords available from the 'node-gettext' lib and tested with this parser.
-  keywordSpec = keywordSpec || Keywordspec(
+  keywordSpec = keywordSpec || new Keywordspec(
     ["gettext", "_",
      //"dgettext:2", "_d:2",
      "ngettext:1,2", "_n:1,2",
@@ -80,6 +80,12 @@ Parser.prototype.parse = function (template) {
     params,
     msgid;
 
+  function findResult (result) {
+    return results.find(function(results) {
+      return results.msgid === result.msgid && results.msgctxt === result.msgctxt;
+    });
+  }
+
   while ((match = this.expressionPattern.exec(template)) !== null) {
     keyword = match[1];
     params = match[2].split(',').reduce(groupParams, []).map(trim).map(trimQuotes);
@@ -110,9 +116,7 @@ Parser.prototype.parse = function (template) {
     }
 
     // Add result to results.
-    var foundResult = results.find(function(results) {
-      return results.msgid === result.msgid && results.msgctxt === result.msgctxt;
-    });
+    var foundResult = findResult(result);
 
     if(foundResult) {
       foundResult.line.push(result.line[0]);

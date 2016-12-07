@@ -3,10 +3,10 @@ var Parser = require('..'),
   assert = require('assert');
 
 function inObject(object, property, value, returnObject) {
-    var objectArray = Object.keys(object).map(function (key) { return object[key]; })
+    var objectArray = Object.keys(object).map(function (key) { return object[key]; });
     
     for(var i in objectArray) {
-        if(objectArray[i][property] == value) {
+        if(objectArray[i][property] === value) {
             if(returnObject) {
                 return objectArray[i];
             }
