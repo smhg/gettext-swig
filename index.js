@@ -81,9 +81,13 @@ Parser.prototype.parse = function (template) {
     msgid;
 
   function findResult (result) {
-    return results.find(function(results) {
-      return results.msgid === result.msgid && results.msgctxt === result.msgctxt;
-    });
+    for(var i in results) {
+      if(results[i].msgid === result.msgid && results[i].msgctxt === result.msgctxt) {
+        return results[i];
+      }
+    }
+
+    return undefined;
   }
 
   while ((match = this.expressionPattern.exec(template)) !== null) {
