@@ -1,7 +1,5 @@
 'use strict';
 
-var Keywordspec = require('./keywordspec');
-
 var newline = /\r?\n|\r/g,
   escapeRegExp = function (str) {
     // source: https://developer.mozilla.org/en/docs/Web/JavaScript/Guide/Regular_Expressions
@@ -40,21 +38,78 @@ var newline = /\r?\n|\r/g,
  * @param Object keywordSpec An object with keywords as keys and parameter indexes as values
  */
 function Parser (keywordSpec) {
-  // All keywords available from the 'node-gettext' lib and tested with this parser.
-  keywordSpec = keywordSpec || new Keywordspec(
-    ["gettext", "_",
-     //"dgettext:2", "_d:2",
-     "ngettext:1,2", "_n:1,2",
-     //"dngettext:2,3", "_dn:2,3",
-		 "pgettext:1c,2", "_p:1c,2",
-     //"dpgettext:2c,3", "_dp:2c,3",
-     "npgettext:1c,2,3", "_np:1c,2,3",
-     //"dnpgettext:2c,3,4", "_dnp:2c,3,4"
-    ]);
-
-  if (typeof keywordSpec !== 'object') {
-    throw 'Invalid keyword spec';
+  // make new optional
+  if (!(this instanceof Parser)) {
+    return new Parser(keywordSpec);
   }
+
+  // default JavaScript keywords from
+  // https://www.gnu.org/savannah-checkouts/gnu/gettext/manual/html_node/xgettext-Invocation.html
+  keywordSpec = keywordSpec || {
+      _: {
+        msgid: 0
+      },
+      gettext: {
+        msgid: 0
+      },
+      dgettext: {
+        msgid: 1
+      },
+      dcgettext: {
+        msgid: 1
+      },
+      ngettext: {
+        msgid: 0,
+        msgid_plural: 1
+      },
+      dngettext: {
+        msgid: 1,
+        msgid_plural: 2
+      },
+      pgettext: {
+        msgctxt: 0,
+        msgid: 1
+      },
+      npgettext: {
+        msgctxt: 0,
+        msgid: 1,
+        msgid_plural: 2
+      },
+      dpgettext: {
+        msgctxt: 1,
+        msgid: 2
+      }
+  };
+
+  Object.keys(keywordSpec).forEach(function (keyword) {
+    var positions = keywordSpec[keyword];
+
+    if ('msgid' in positions) {
+      return;
+    } else if (Array.isArray(positions) && positions.indexOf('msgid') >= 0) {
+      // maintain backwards compatibility with `_: ['msgid']` format
+      keywordSpec[keyword] = positions.reduce(function (result, key, idx) {
+        result[key] = idx;
+
+        return result;
+      }, {});
+    } else if (Array.isArray(positions) && positions.length > 0) {
+      // maintain backwards compatibility with `_: [0]` format
+      var order = ['msgid', 'msgid_plural'];
+
+      keywordSpec[keyword] = positions.slice(0).reduce(function (result, pos, idx) {
+        result[order[idx]] = pos;
+
+        return result;
+      }, {});
+    }
+  });
+
+  Object.keys(keywordSpec).forEach(function (keyword) {
+    if (!('msgid' in keywordSpec[keyword])) {
+      throw new Error('Every keyword must have a msgid key, but "' + keyword + '" doesn\'t have one');
+    }
+  });
 
   this.keywordSpec = keywordSpec;
   this.expressionPattern = new RegExp([
@@ -67,6 +122,13 @@ function Parser (keywordSpec) {
   ].join(''), 'g');
 }
 
+// Same as what Jed.js uses
+Parser.contextDelimiter = String.fromCharCode(4);
+
+Parser.messageToKey = function (msgid, msgctxt) {
+  return msgctxt ? msgctxt + Parser.contextDelimiter + msgid : msgid;
+};
+
 /**
  * Given a Swig template string returns the list of i18n strings.
  *
@@ -74,7 +136,7 @@ function Parser (keywordSpec) {
  * @return Object The list of translatable strings, the line(s) on which each appears and an optional plural form.
  */
 Parser.prototype.parse = function (template) {
-  var results = [],
+  var results = {},
     match,
     keyword,
     params,
@@ -103,15 +165,6 @@ Parser.prototype.parse = function (template) {
       msgid: msgid,
       line: []
     };
-    
-    // Parse message lines.
-    result.line.push(template.substr(0, match.index).split(newline).length);
-
-    // Parse plural form.
-    if(this.keywordSpec[keyword].msgid_plural !== undefined) {
-      var pluralIndex = this.keywordSpec[keyword].msgid_plural;
-      result.plural = result.plural || params[pluralIndex];
-    }
 
     // Parse context.
     if(this.keywordSpec[keyword].msgctxt !== undefined) {
@@ -119,14 +172,37 @@ Parser.prototype.parse = function (template) {
       result.msgctxt = result.msgctxt || params[contextIndex];
     }
 
-    // Add result to results.
-    var foundResult = findResult(result);
+    // Parse plural form.
+    if(this.keywordSpec[keyword].msgid_plural !== undefined) {
+      var pluralIndex = this.keywordSpec[keyword].msgid_plural;
+      var pluralValue = params[pluralIndex];
 
+      if (typeof pluralValue !== 'string' && !(pluralValue instanceof String)) {
+        throw new Error('Plural must be a string literal for msgid ' + result.msgid);
+      }
+
+      var existingPlural = results[result.msgid];
+      if(existingPlural && existingPlural.plural && (existingPlural.plural !== pluralValue)) {
+        throw new Error('Incompatible plural definitions for msgid "' + msgid +
+          '" ("' + result.msgid_plural + '" and "' + plural + '")');
+      }
+
+      result.plural = result.msgid_plural = result.plural || pluralValue;
+    }
+ 
+    // Parse message lines.
+    result.line.push(template.substr(0, match.index).split(newline).length);
+
+    // Define result key.
+    var resultKey = Parser.messageToKey(result.msgid, result.msgctxt);
+
+    // Add result to results.
+    var foundResult = results[resultKey];
     if(foundResult) {
       foundResult.line.push(result.line[0]);
     } else {
-      results.push(result);
-    }    
+      results[resultKey] = result;
+    }
   }
 
   return results;
