@@ -9,8 +9,8 @@ text")}}
     </p>
 <p>{{something}}</p>
 <button>{{_("Sign in") }}</button>
-{{#if check}}
+{% if check %}
 <p>{{_("inside block")}}</p>
-{{else}}
+{% else %}
 <span class="warning">{{_("inside block inverse")}}</span>
-{{/if}}
+{% endif %}
