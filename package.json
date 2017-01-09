@@ -29,7 +29,7 @@
   "homepage": "https://github.com/smhg/gettext-swig",
   "devDependencies": {
     "jshint": "^2.5.10",
-    "mocha": "^2.0.1"
+    "mocha": "3.2.0"
   },
   "dependencies": {}
 }
