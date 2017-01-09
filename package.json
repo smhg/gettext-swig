@@ -7,7 +7,8 @@
     "test": "test"
   },
   "scripts": {
-    "test": "jshint index.js test/index.js && mocha"
+    "lint": "eslint index.js test",
+    "test": "mocha"
   },
   "repository": {
     "type": "git",
@@ -28,7 +29,10 @@
   },
   "homepage": "https://github.com/smhg/gettext-swig",
   "devDependencies": {
-    "jshint": "^2.5.10",
+    "eslint": "3.13.0",
+    "eslint-config-standard": "6.2.1",
+    "eslint-plugin-promise": "3.4.0",
+    "eslint-plugin-standard": "2.0.1",
     "mocha": "3.2.0"
   },
   "dependencies": {}

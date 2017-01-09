@@ -1,8 +1,9 @@
 'use strict';
 
-var Parser = require('..'),
-  fs = require('fs'),
-  assert = require('assert');
+var Parser = require('..');
+var fs = require('fs');
+var path = require('path');
+var assert = require('assert');
 
 describe('Parser', function () {
   describe('#()', function () {
@@ -33,7 +34,7 @@ describe('Parser', function () {
 
   describe('#parse()', function () {
     it('should return results', function (done) {
-      fs.readFile(__dirname + '/fixtures/template.html', {encoding: 'utf8'}, function (err, data) {
+      fs.readFile(path.join(__dirname, 'fixtures/template.html'), {encoding: 'utf8'}, function (err, data) {
         if (err) {
           throw err;
         }
@@ -51,7 +52,7 @@ describe('Parser', function () {
     });
 
     it('should return plural results', function (done) {
-      fs.readFile(__dirname + '/fixtures/plural.html', {encoding: 'utf8'}, function (err, data) {
+      fs.readFile(path.join(__dirname, 'fixtures/plural.html'), {encoding: 'utf8'}, function (err, data) {
         if (err) {
           throw err;
         }
@@ -66,12 +67,12 @@ describe('Parser', function () {
     });
 
     it('should throw an error if there are mismatched plurals', function (done) {
-      fs.readFile(__dirname + '/fixtures/mismatched-plurals.html', {encoding: 'utf8'}, function (err, data) {
+      fs.readFile(path.join(__dirname, 'fixtures/mismatched-plurals.html'), {encoding: 'utf8'}, function (err, data) {
         if (err) {
           throw err;
         }
 
-        assert.throws(function() { new Parser().parse(data); }, Error);
+        assert.throws(function () { new Parser().parse(data); }, Error);
 
         done();
       });
@@ -79,7 +80,7 @@ describe('Parser', function () {
   });
 
   it('should support skipping parameters', function (done) {
-    fs.readFile(__dirname + '/fixtures/skip-params.html', {encoding: 'utf8'}, function (err, data) {
+    fs.readFile(path.join(__dirname, 'fixtures/skip-params.html'), {encoding: 'utf8'}, function (err, data) {
       if (err) {
         throw err;
       }
@@ -94,7 +95,7 @@ describe('Parser', function () {
   });
 
   it('should support extracting contexts', function (done) {
-    fs.readFile(__dirname + '/fixtures/contexts.html', {encoding: 'utf8'}, function (err, data) {
+    fs.readFile(path.join(__dirname, 'fixtures/contexts.html'), {encoding: 'utf8'}, function (err, data) {
       if (err) {
         throw err;
       }
@@ -138,8 +139,7 @@ describe('Parser', function () {
   });
 
   it('should support being called without `new`', function (done) {
-    /* jshint newcap: false */
-    fs.readFile(__dirname + '/fixtures/template.html', {encoding: 'utf8'}, function (err, data) {
+    fs.readFile(path.join(__dirname, 'fixtures/template.html'), {encoding: 'utf8'}, function (err, data) {
       if (err) {
         throw err;
       }

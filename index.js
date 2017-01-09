@@ -1,37 +1,37 @@
 'use strict';
 
-var newline = /\r?\n|\r/g,
-  escapeRegExp = function (str) {
-    // source: https://developer.mozilla.org/en/docs/Web/JavaScript/Guide/Regular_Expressions
-    return str.replace(/([.*+?^${}()|\[\]\/\\])/g, "\\$1");
-  },
-  trim = function (str) {
-    return str.replace(/^\s+|\s+$/g, '');
-  },
-  trimQuotes = function (str) {
-    return str.replace(/^['"]|['"]$/g, '');
-  },
-  isQuote = function (chr) {
-    return /['"]/.test(chr);
-  },
-  groupParams = function (result, part) {
-    if (result.length > 0) {
-      var last = result[result.length - 1],
-        firstChar = last[0],
-        lastChar = last[last.length - 1];
+var newline = /\r?\n|\r/g;
+var escapeRegExp = function (str) {
+  // source: https://developer.mozilla.org/en/docs/Web/JavaScript/Guide/Regular_Expressions
+  return str.replace(/([.*+?^${}()|[\]/\\])/g, '\\$1');
+};
+var trim = function (str) {
+  return str.replace(/^\s+|\s+$/g, '');
+};
+var trimQuotes = function (str) {
+  return str.replace(/^['"]|['"]$/g, '');
+};
+var isQuote = function (chr) {
+  return /['"]/.test(chr);
+};
+var groupParams = function (result, part) {
+  if (result.length > 0) {
+    var last = result[result.length - 1];
+    var firstChar = last[0];
+    var lastChar = last[last.length - 1];
 
-      if (isQuote(firstChar) && (!isQuote(lastChar) || last[last.length - 2] === '\\')) {
-        // merge with previous
-        result[result.length - 1] += ',' + part;
-      } else {
-        result.push(part);
-      }
+    if (isQuote(firstChar) && (!isQuote(lastChar) || last[last.length - 2] === '\\')) {
+      // merge with previous
+      result[result.length - 1] += ',' + part;
     } else {
       result.push(part);
     }
+  } else {
+    result.push(part);
+  }
 
-    return result;
-  };
+  return result;
+};
 
 /**
  * Constructor
@@ -46,39 +46,39 @@ function Parser (keywordSpec) {
   // default JavaScript keywords from
   // https://www.gnu.org/savannah-checkouts/gnu/gettext/manual/html_node/xgettext-Invocation.html
   keywordSpec = keywordSpec || {
-      _: {
-        msgid: 0
-      },
-      gettext: {
-        msgid: 0
-      },
-      dgettext: {
-        msgid: 1
-      },
-      dcgettext: {
-        msgid: 1
-      },
-      ngettext: {
-        msgid: 0,
-        msgid_plural: 1
-      },
-      dngettext: {
-        msgid: 1,
-        msgid_plural: 2
-      },
-      pgettext: {
-        msgctxt: 0,
-        msgid: 1
-      },
-      npgettext: {
-        msgctxt: 0,
-        msgid: 1,
-        msgid_plural: 2
-      },
-      dpgettext: {
-        msgctxt: 1,
-        msgid: 2
-      }
+    _: {
+      msgid: 0
+    },
+    gettext: {
+      msgid: 0
+    },
+    dgettext: {
+      msgid: 1
+    },
+    dcgettext: {
+      msgid: 1
+    },
+    ngettext: {
+      msgid: 0,
+      msgid_plural: 1
+    },
+    dngettext: {
+      msgid: 1,
+      msgid_plural: 2
+    },
+    pgettext: {
+      msgctxt: 0,
+      msgid: 1
+    },
+    npgettext: {
+      msgctxt: 0,
+      msgid: 1,
+      msgid_plural: 2
+    },
+    dpgettext: {
+      msgctxt: 1,
+      msgid: 2
+    }
   };
 
   Object.keys(keywordSpec).forEach(function (keyword) {
@@ -136,11 +136,11 @@ Parser.messageToKey = function (msgid, msgctxt) {
  * @return Object The list of translatable strings, the line(s) on which each appears and an optional plural form.
  */
 Parser.prototype.parse = function (template) {
-  var results = {},
-    match,
-    keyword,
-    params,
-    msgid;
+  var results = {};
+  var match;
+  var keyword;
+  var params;
+  var msgid;
 
   while ((match = this.expressionPattern.exec(template)) !== null) {
     keyword = match[1];
@@ -157,13 +157,13 @@ Parser.prototype.parse = function (template) {
     };
 
     // Parse context.
-    if(this.keywordSpec[keyword].msgctxt !== undefined) {
+    if (this.keywordSpec[keyword].msgctxt !== undefined) {
       var contextIndex = this.keywordSpec[keyword].msgctxt;
       result.msgctxt = result.msgctxt || params[contextIndex];
     }
 
     // Parse plural form.
-    if(this.keywordSpec[keyword].msgid_plural !== undefined) {
+    if (this.keywordSpec[keyword].msgid_plural !== undefined) {
       var pluralIndex = this.keywordSpec[keyword].msgid_plural;
       var pluralValue = params[pluralIndex];
 
@@ -172,14 +172,14 @@ Parser.prototype.parse = function (template) {
       }
 
       var existingPlural = results[result.msgid];
-      if(existingPlural && existingPlural.plural && (existingPlural.plural !== pluralValue)) {
+      if (existingPlural && existingPlural.plural && (existingPlural.plural !== pluralValue)) {
         throw new Error('Incompatible plural definitions for msgid "' + result.msgid +
           '" ("' + existingPlural.plural + '" and "' + pluralValue + '")');
       }
 
       result.plural = result.msgid_plural = result.plural || pluralValue;
     }
- 
+
     // Parse message lines.
     result.line.push(template.substr(0, match.index).split(newline).length);
 
@@ -188,7 +188,7 @@ Parser.prototype.parse = function (template) {
 
     // Add result to results.
     var foundResult = results[resultKey];
-    if(foundResult) {
+    if (foundResult) {
       foundResult.line.push(result.line[0]);
     } else {
       results[resultKey] = result;
